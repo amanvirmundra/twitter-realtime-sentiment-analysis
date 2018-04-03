@@ -1,0 +1,68 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+
+<div class="row">
+    <div class="col-sm-6"><div class="tweets list-group"></div></div>
+    <div class="col-sm-6"><div class="sentiments list-group"></div></div>
+</div>
+
+@section scripts
+{
+    <script src="/Scripts/jquery.signalR-2.2.2.min.js" type="text/javascript"></script>
+    <script src="/signalr/hubs" type="text/javascript"></script>
+
+
+    <script>
+        $(function () {
+            // obtain reference to the hub proxy and hub itself
+            var theHub = $.connection.twitterHub;
+
+            // this is the function that the server will call to broadcast new tweets
+            theHub.client.broadcast = function (tweet) {
+                $('.tweets').append(
+                '<div class="media list-group-item">' +
+                    '<div class="media-left">' +
+                        '<img src="' + tweet.User.profile_image_url + '" class="media-object img-circle" style="width:60px">' +
+                    '</div>' +
+                  '<div class="media-body">' +
+                    '<h4 class="media-heading">' + tweet.UserName + '</h4>' +
+                    '<p>' + tweet.text + '</p>' +
+                  '</div>' +
+                '</div>');
+            };
+
+            theHub.client.processedBatch = function (tweets) {
+
+                $.each(tweets, function (k, v) {
+                    debugger;
+                    var listClass = "list-group-item-info";
+                    if (v.Sentiment == 2)
+                    {
+                        listClass = "list-group-item-success";
+                    }
+                    if (v.Sentiment == 0)
+                    {
+                        listClass = "list-group-item-danger";
+                    }
+
+                    $('.sentiments').append(
+                    '<div class="media list-group-item ' + listClass +'">' +
+                        '<div class="media-left">' +
+                            '<img src="' + v.User.profile_image_url + '" class="media-object img-circle" style="width:60px">' +
+                        '</div>' +
+                      '<div class="media-body">' +
+                        '<h4 class="media-heading">' + v.UserName + '  <span class="small">Score: ' + v.SentimentPercentage + '</span></h4>' +
+                        '<p>' + v.text + '</p>' +
+                      '</div>' +
+                    '</div>');
+                    });
+            };
+
+            $.connection.hub.start().done(function () {
+                console.log("connected");
+            });
+        });
+    </script>
+}
